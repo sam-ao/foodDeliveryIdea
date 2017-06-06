@@ -1,0 +1,18 @@
+doctype html
+html
+  head
+    title Deliver Us
+    link(rel='stylesheet', href='/home_style.css')
+    script(src='https://code.jquery.com/jquery-3.1.1.min.js')
+    script(src='/jquery-ui-1.12.1/jquery-ui.min.js')
+    script(src='/socket.io/socket.io.js')
+    script(src='/home.js')
+  body
+    .container
+      #menu
+        button(type='button') My Orders
+        button(type='button') My Deliveries
+      #content
+        button(type='button', name='order') I want to order something
+        button(type='button', name='delivery') I want to deliver something
+

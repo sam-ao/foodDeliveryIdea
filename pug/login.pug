@@ -1,0 +1,17 @@
+doctype html
+html
+  head
+    title Deliver Us
+    link(rel='stylesheet', href='/login_style.css')
+    script(src='https://code.jquery.com/jquery-3.1.1.min.js')
+    script(src='/jquery-ui-1.12.1/jquery-ui.min.js')
+    script(src='/socket.io/socket.io.js')
+    script(src='/login.js')
+    
+  body
+    .container
+      header Welcome to Deliver Us!
+        p.submit
+          button(name='submit', onclick='login()') Login with Facebook Placeholder
+        p#login-result
+
