@@ -44,4 +44,36 @@ io.on('connect', function(socket){
     socket.on('login', function(response){
 		
     });
+    socket.on('user-login', function(number){
+		console.log(number);
+	});
+	socket.on('get-restaurants', function(){
+		con.query('SELECT * FROM restaurants', function(err,rows){
+			if(err) throw err;
+			rows.sort(compare);
+			socket.emit('restaurants', rows);
+		});
+	});
+	socket.on('get-menu', function(restaurantID){
+		con.query('SELECT * FROM menu_items WHERE restaurantID=' + restaurantID, function(err,rows){
+			if(err) throw err;
+			rows.sort(compare);
+			socket.emit('menu', rows);
+		});
+	});
+	socket.on('get-sub-menu', function(menuItemID){
+		con.query('SELECT * FROM sub_menu_items WHERE menuItemID=' + menuItemID, function(err,rows){
+			if(err) throw err;
+			rows.sort(compare);
+			socket.emit('sub-menu', rows);
+		});
+	});
 });
+
+function compare(a,b) {
+  if (a.name < b.name)
+    return -1;
+  if (a.name > b.name)
+    return 1;
+  return 0;
+}

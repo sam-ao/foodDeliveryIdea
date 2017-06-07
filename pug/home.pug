@@ -12,7 +12,9 @@ html
       #menu
         button(type='button') My Orders
         button(type='button') My Deliveries
+        #phonenumber
+          button(type='button', onclick='changePhoneNumber()') Set/Change Phone Number
       #content
-        button(type='button', name='order') I want to order something
-        button(type='button', name='delivery') I want to deliver something
+        button(type='button', id='order', onclick='displayMenu()') I want to order something
+        button(type='button', id='delivery', onclick='displayForum()') I want to deliver something
 
