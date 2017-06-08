@@ -4,6 +4,7 @@ var user;
 var userId;
 var userName;
 var userNumber;
+var userPicture;
 
 $(function () {
 	(function(d, s, id){
@@ -30,9 +31,14 @@ $(function () {
 	    			window.location.href = "http://localhost:3000/login";
 	    		}
 	    		else {
-	    			FB.api('/me', function(response) {
+	    			FB.api('/me', 'GET', {fields: 'first_name, last_name, name, id, picture.width(50).height(50)'}, function(response) {
+	    				console.log(response);
+	    				userPicture = response.picture.data.url;
+						console.log(userPicture);
+						console.log(userId);
 						userId = response.id;
 						userName = response.first_name + response.last_name;
+						user = {id: userId, phoneNumber: 0, name: userName, picture: userPicture};
 					});
 	    		}
     		});
@@ -57,10 +63,12 @@ function openTextInput() {
 }
 
 var restaurantMenu;
+var orderDialog = "<p><img src='"+userPicture+"'></img><textarea rows='5' cols='50' id='order' placeholder=\"Enter your order and any special requests here. Don't forget to include your location!\"></textarea></p>" + 
+				  "<p><button type='button' onclick='submitOrder()'>Submit Order</button><div id='submit-result'></div></p>";
 function displayMenu() {
 	socket.emit('get-restaurants');
 	socket.on('restaurants', function(restaurants) {
-		restaurantMenu = "<p><button type=\'button\' onclick=\'back()\'>Back</button></p><p>";
+		restaurantMenu = "<p><button type=\'button\' onclick=\'displayMainMenu()\'>Back</button></p><p>";
 		var columnCounter = 0;
 		restaurants.forEach(function(restaurant){
 			columnCounter++;
@@ -71,8 +79,40 @@ function displayMenu() {
 			restaurantMenu += "<button type=\"button\" onclick=\"selectRestaurant(" + restaurant.id + ")\"><p>" + restaurant.name + "</p>" +
 								"<p>" + restaurant.location + "</p></button>"; 
 		});
-		restaurantMenu += "</p>";
+		restaurantMenu += "</p>" + orderDialog;
 		load('/', displayRestaurants);
+	});
+}
+
+var orderForum;
+function displayForum() {
+	socket.emit('get-orders');
+	socket.on('orders', function(orders) {
+		orderForum = "<p><button type=\'button\' onclick=\'displayMainMenu()\'>Back</button></p>";
+		orders.forEach(function(order){
+			socket.emit('get-user', order.userID);
+			socket.on('user', function(user) {
+				orderForum += "<p><img src='"+user.picture+"'></img>" + user.name + ": " + order.orderContent + "<button type='button' onclick=\'claimOrder(" + order.id + ")\''>Claim</button></p>"
+			});
+		});
+		load('/', function(){
+			document.getElementById("content").innerHTML = orderForum;
+			console.log(orderForum);
+		});
+	});
+}
+
+function claimOrder(orderID) {
+	socket.emit('claim-order', {orderID: orderID, userID: user.id});
+	displayForum();
+}
+
+function submitOrder() {
+	var order = document.getElementById("order").value;
+	var userOrder = {user: user, order: order};
+	socket.emit('order-submitted', userOrder);
+	load('/', function(){
+		document.getElementById("submit-result").innerHTML = 'Order Submitted!';
 	});
 }
 
@@ -80,7 +120,7 @@ var menuItemMenu;
 function selectRestaurant(restaurantID) {
 	socket.emit('get-menu', restaurantID);
 	socket.on('menu', function(menu){
-		menuItemMenu = "<p><button type=\'button\' onclick=\'back()\'>Back</button></p><p>";
+		menuItemMenu = "<p><button type=\'button\' onclick=\'backToRestaurants()\'>Back</button></p><p>";
 		var columnCounter = 0;
 		menu.forEach(function(menuItem){
 			columnCounter++;
@@ -97,16 +137,16 @@ function selectRestaurant(restaurantID) {
 								"<p>" + menuItem.description + "</p></button>";
 			}
 		});
-		menuItemMenu += "</p>";
+		menuItemMenu += "</p>" + orderDialog;
 		load('/', displayMenuItems);
 	});
 }
 
 var subMenuItemMenu;
-function expandMenuItem(menuItem) {
-	socket.emit('get-sub-menu', menuItem);
+function expandMenuItem(menuItemID) {
+	socket.emit('get-sub-menu', menuItemID);
 	socket.on('sub-menu', function(submenu){
-		subMenuItemMenu = "<p><button type=\'button\' onclick=\'back()\'>Back</button></p>";
+		subMenuItemMenu = "<p><button type=\'button\' onclick=\'backToMenuItems(" + menuItemID + ")\'>Back</button></p>";
 		subMenuItemMenu += "<p>Select one of the following...</p><p>";
 		var columnCounter = 0;
 		submenu.forEach(function(subMenuItem){
@@ -118,9 +158,29 @@ function expandMenuItem(menuItem) {
 			subMenuItemMenu += "<button type=\"button\" onclick=\"selectSubMenuItem(" + subMenuItem.id + ")\">" + subMenuItem.name + "</p>" +
 								"<p>" + subMenuItem.description + "</p></button>";
 		});
-		subMenuItemMenu += "</p>";
+		subMenuItemMenu += "</p>" + orderDialog;
 		load('/', displaySubMenuItems);
 	});
+}
+
+function backToRestaurants() {
+	displayMenu();
+}
+
+function backToMenuItems(menuItemID) {
+	socket.emit('find-restaurant-id', menuItemID);
+	socket.on('restaurant-id', function(restaurantID) {
+		console.log(restaurantID[0].restaurantID);
+		selectRestaurant(restaurantID[0].restaurantID);
+	});
+}
+
+function displayMainMenu() {
+	var mainMenu = "<button type='button', id='order', onclick='displayMenu()'> I want to order something</button>" +
+    				"<button type='button', id='delivery', onclick='displayForum()'> I want to deliver something</button>";
+    load('/', function() {
+    	document.getElementById("content").innerHTML = mainMenu;
+    })
 }
 
 function displayRestaurants() {

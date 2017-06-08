@@ -4,6 +4,7 @@
     "description": "DeliverUs Beta Website",
     "dependencies": {
         "express": "^4.14.1",
+        "mysql": "^2.13.0",
         "pug": "latest",
         "socket.io": "^1.7.3"
     },

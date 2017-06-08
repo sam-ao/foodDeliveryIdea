@@ -68,6 +68,52 @@ io.on('connect', function(socket){
 			socket.emit('sub-menu', rows);
 		});
 	});
+	socket.on('find-restaurant-id', function(menuItemID){
+		con.query('SELECT restaurantID FROM menu_items WHERE id=' + menuItemID, function(err,rows){
+			if(err) throw err;
+			rows.sort(compare);
+			socket.emit('restaurant-id', rows);
+		});
+	});
+	socket.on('order-submitted', function(userOrder){
+		con.query('INSERT INTO orders (userID, orderContent, completed) VALUES (' + userOrder.user.id + ', \"' + userOrder.order + '\", 0);', function(err){
+			if(err) throw err;
+		});
+		con.query('SELECT * FROM users WHERE id=' + userOrder.user.id, function(err,rows){
+			if(err) throw err;
+			if(rows == null) {
+				con.query('INSERT INTO users (id, phoneNumber, name, picture) VALUES (' + userOrder.user.id + ', ' + userOrder.user.phoneNumber +
+						 ', \"' + userOrder.user.name + '\", \"' + userOrder.user.picture + '\");', function(err){
+					if(err) throw err;
+				});
+			}
+			else {
+				con.query('UPDATE users SET name=\"' + userOrder.user.name + '\", picture=\"' + userOrder.user.picture + '\" WHERE id=' + userOrder.user.id, function(err){
+					if(err) throw err;
+				});
+			} 
+		});
+	});
+	socket.on('get-orders', function(){
+		con.query('SELECT * FROM orders WHERE delivererID IS NULL', function(err,rows){
+			if(err) throw err;
+			socket.emit('orders', rows);
+		});
+	});
+	socket.on('get-user', function(userID){
+		con.query('SELECT * FROM users WHERE id=' + userID, function(err,rows){
+			if(err) throw err;
+			rows.sort(compare);
+			socket.emit('user', rows);
+		});
+	});
+	socket.on('claim-order', function(orderClaim) {
+		console.log(orderClaim.userID);
+		console.log(orderClaim.orderID);
+		con.query('UPDATE orders SET delivererID=' + orderClaim.userID + ' WHERE id=' + orderClaim.orderID + ";", function(err){
+			if(err) throw err;
+		});
+	});
 });
 
 function compare(a,b) {
